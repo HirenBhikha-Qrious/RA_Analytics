@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: int_contacts
+    description: "Contacts Dimension Staging"
+    columns:
+      - name: contact_id
+        tests:
+          - unique
+          - not_null
+  - name: int_companies
+    description: "Contacts Dimension Staging"
+    columns:
+      - name: company_name
+        tests:
+          - unique
+          - not_null
