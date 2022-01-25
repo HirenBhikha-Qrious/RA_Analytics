@@ -1,0 +1,260 @@
+name: 'ra_data_warehouse'
+version: '0.0.2'
+
+profile: 'ra_data_warehouse'
+
+source-paths: ["models"]
+analysis-paths: ["analysis"]
+test-paths: ["tests"]
+data-paths: ["data"]
+macro-paths: ["macros"]
+
+target-path: "target"  # directory which will store compiled SQL files
+clean-targets:         # directories to be removed by `dbt clean`
+    - "target"
+    - "dbt_modules"
+
+on-run-start:
+    - "create table if not exists {{ generate_prefixed_target_name() }}_logs.audit_dbt_results (object string, status string, row_count numeric, execution_time numeric, load_ts timestamp)"
+
+on-run-end:
+    - "insert into {{ generate_prefixed_target_name() }}_logs.audit_dbt_results (object, status, row_count, execution_time, load_ts) values {{ results_values(results) }}"
+
+models:
+  ra_data_warehouse:
+# source adapter general settings
+      sources:
+          materialized: view
+          schema: staging
+# source adapter module settings
+          stg_asana_projects:
+              vars:
+                  id-prefix: asana-
+                  etl: stitch
+                  stitch_schema: stitch_asana
+                  staff_email_domain: rittmananalytics.com
+                  stitch_workspaces_table: workspaces
+                  stitch_projects_table: projects
+                  stitch_tasks_table: tasks
+                  stitch_users_table: users
+                  tags: ["asana", "projects"]
+          stg_facebook_ads:
+              vars:
+                  id-prefix: fbads-
+                  etl: segment
+                  stitch_schema: stitch_facebook_ads
+                  stitch_ad_performance_table: insights
+                  stitch_ad_groups_table: ad_adsets
+                  stitch_ads_table: ads
+                  stitch_campaigns_table: campaigns
+                  segment_schema: segment_facebook_ads
+                  segment_ad_performance_table: insights
+                  segment_ad_groups_table: ad_sets
+                  segment_ads_table: ads
+                  segment_campaigns_table: campaigns
+                  tags: ["facebook", "ads", "marketing"]
+          stg_google_ads:
+              vars:
+                  id-prefix: gads-
+                  etl: segment
+                  stitch_schema: stitch_google_ads
+                  stitch_accounts_table: accounts
+                  stitch_campaigns_table: campaigns
+                  segment_schema: segment_google_ads
+                  segment_campaign_performance_table: campaign_performance_reports
+                  segment_ad_performance_table: ad_performance_reports
+                  segment_ad_groups_table: ad_groups
+                  segment_ads_table: ads
+                  segment_campaigns_table: campaigns
+                  tags: ["google_ads", "ads", "marketing"]
+          stg_harvest_projects:
+              vars:
+                  id-prefix: harvest-
+                  etl: stitch
+                  stitch_schema: rittman_analytics
+                  staff_email_domain: rittmananalytics.com
+                  stitch_clients_table: clients
+                  stitch_contacts_table: contacts
+                  stitch_invoices_table: invoices
+                  stitch_invoice_line_items_table: invoice_line_items
+                  stitch_projects_table: projects
+                  stitch_tasks_table: tasks
+                  stitch_project_tasks_table: project_tasks
+                  stitch_time_entries_table: time_entries
+                  stitch_users_table: users
+                  stitch_user_projects_table: user_projects
+                  stitch_user_project_tasks_table: user_project_tasks
+                  stitch_expenses_table: expenses
+                  tags: ["harvest", "projects"]
+          stg_hubspot_crm:
+              vars:
+                  id-prefix: hubspot-
+                  stitch_schema: stitch_hubspot
+                  fivetran_schema: fivetran_hubspot_euwest2
+                  etl: stitch
+                  stitch_companies_table: companies
+                  stitch_contacts_table: contacts
+                  stitch_deals_table: deals
+                  stitch_owners_table: owners
+                  stitch_pipeline_stages_table: pipeline_stages
+                  stitch_deal_pipelines_table: deal_pipelines
+                  fivetran_company_table: company
+                  fivetran_contact_table: contact
+                  fivetran_deal_table: deal
+                  fivetran_owner_table: owner
+                  fivetran_pipeline_stage_table: pipeline_stage
+                  fivetran_pipeline_table: pipeline
+                  fivetran_property_history_table: property_history
+                  fivetran_deal_company_table: deal_company
+                  tags: ["hubspot", "crm"]
+          stg_intercom_messaging:
+              vars:
+                  id-prefix: intercom-
+                  etl: stitch
+                  stitch_schema: stitch_intercom
+                  stitch_contacts_table: contacts
+                  stitch_conversations_table: conversations
+                  tags: ["intercom", "messaging"]
+          stg_jira_projects:
+              vars:
+                  id-prefix: jira-
+                  etl: stitch
+                  stitch_schema: stitch_jira2
+                  staff_email_domain: rittmananalytics.com
+                  stitch_projects_table: projects
+                  stitch_project_types_table: project_types
+                  stitch_project_categories_table: project_categories
+                  stitch_issues_table: issues
+                  stitch_users_table: users
+                  tags: ["jira", "projects"]
+          stg_mailchimp_email:
+              vars:
+                  id-prefix: mailchimp-
+                  etl: stitch
+                  stitch_schema: stitch_mailchimp
+                  stitch_list_members_table: list_members
+                  stitch_reports_email_activity_table: reports_email_activity
+                  stitch_lists_table: lists
+                  stitch_campaigns_table: campaigns
+                  tags: ["mailchimp","email","marketing"]
+          stg_mixpanel_events:
+              vars:
+                  id-prefix: mixpanel-
+                  stitch_schema: mixpanel_stitch
+                  fivetran_schema: fivetran_mixpanel
+                  etl: fivetran
+                  fivetran_event_table: event
+                  stitch_export_table: export
+                  tags: ["mixpanel", "events","marketing"]
+          stg_segment_events:
+              vars:
+                  id-prefix: segment-
+                  etl: segment
+                  segment_schema: company_website
+                  segment_tracks_table: tracks
+                  segment_pages_table: pages
+                  tags: ["segment", "events","marketing"]
+          stg_stripe_payments:
+              vars:
+                  id-prefix: stripe-
+                  etl: stitch
+                  stitch_schema: stitch_stripe
+                  stitch_balance_transactions_table: balance_transactions
+                  stitch_charges_table: charges
+                  stitch_events_table: events
+                  stitch_payout_transactions_table: payout_transactions
+                  stitch_payouts_table: payouts
+                  tags: ["stripe", "payments","finance"]
+          stg_xero_accounting:
+              vars:
+                  id-prefix: xero-
+                  etl: stitch
+                  stitch_schema: xero
+                  stitch_accounts_table: accounts
+                  stitch_categories_table: tracking_categories
+                  stitch_bank_transactions_table: bank_transactions
+                  stitch_contacts_table: contacts
+                  stitch_currencies_table: currencies
+                  stitch_expense_claims_table: expense_claims
+                  stitch_invoices_table: invoices
+                  stitch_payments_table: payments
+                  tags: ["xero", "accounting","finance"]
+          stg_enrichment:
+              vars:
+                  id-prefix: clearbit-
+                  clearbit_schema: enrichment
+                  clearbit_contacts_table: contacts_companies
+                  clearbit_companies_table: contacts_companies
+                  geolite_city_table: company_website.geolite_city_bq_b2b
+                  tags: ["clearbit", "crm","enrichment"]
+          stg_stripe_subscriptions:
+              vars:
+                  id-prefix: stripe-
+                  etl: segment
+                  segment_schema: stripe
+                  segment_customers_table: customers
+                  segment_accounts_table: accounts
+                  segment_cards_table: cards
+                  segment_coupons_table: coupons
+                  segment_discounts_table: discounts
+                  segment_invoices_table: invoices
+                  segment_plans_table: plans
+                  segment_products_table: products
+                  segment_subscriptions_table: subscriptions
+                  segment_balance_transactions_table: balance_transactions
+                  segment_charges_table: charges
+                  segment_events_table: events
+                  segment_payout_transactions_table: payout_transactions
+                  segment_payouts_table: payouts
+                  tags: ["stripe", "payments","finance"]
+# integration layer settings
+      integration:
+          materialized: view
+          schema: staging
+          vars:
+              web_sessionization_trailing_window: 3
+              web_inactivity_cutoff: 30 * 60
+              enable_companies_merge_file: true
+              enable_ip_geo_enrichment: true
+# warehouse layer settings
+      warehouse:
+          materialized: table
+# util module settings
+      utils:
+          materialized: table
+          schema: logs
+# source adapter enable/disable settings
+  vars:
+      enable_harvest_projects_source:      true
+      enable_hubspot_crm_source:           true
+      enable_asana_projects_source:        true
+      enable_jira_projects_source:         true
+      enable_stripe_payments_source:       true
+      enable_stripe_subscriptions_source:  false
+      enable_xero_accounting_source:       true
+      enable_mailchimp_email_source:       true
+      enable_segment_events_source:        true
+      enable_google_ads_source:            true
+      enable_facebook_ads_source:          true
+      enable_intercom_messaging_source:    true
+      enable_custom_source_1:              false
+      enable_custom_source_2:              false
+      enable_mixpanel_events_source:       true
+      enable_clearbit_enrichment_source:   true
+      contacts_enrichment: true
+      companies_enrichment: true
+# warehouse modules
+      enable_crm_warehouse:         true
+      enable_finance_warehouse:     true
+      enable_projects_warehouse:    true
+      enable_marketing_warehouse:   true
+      enable_ads_warehouse:         true
+      enable_product_warehouse:     true
+      enable_subscriptions_warehouse:     false
+
+
+
+
+seeds:
+  ra_data_warehouse:
+    schema: seed
